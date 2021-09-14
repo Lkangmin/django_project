@@ -129,5 +129,5 @@ dmypy.json
 .pyre/
 
 # etcc
-secrets.json
+secrets.jsons
 zappa_settings.json
