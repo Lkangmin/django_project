@@ -1,0 +1,53 @@
+name: Deploy with Zappa
+
+on:
+  push:
+    branches:
+      - main
+
+    
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up python 3.7
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.7'
+
+      - name: Create virtual env
+        run: |
+          pip install virtualenv
+          virtualenv --python=3.7 zappa-deploy-env
+          source zappa-deploy-env/bin/activate
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+
+      - name: Check credential
+        run: |
+          sudo aws configure list-profiles
+
+      - name: Install Dependencies
+        run: |
+          source zappa-deploy-env/bin/activate
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Deploy with zappa
+        env:
+          VIRTUAL_ENV: ./zappa-deploy-env
+        run: |
+          source zappa-deploy-env/bin/activate
+          pip install zappa
+          python manage.py makemigrations
+          zappa deploy dev
+          zappa manage dev migrate
