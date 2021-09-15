@@ -9,7 +9,9 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
+import boto3
 import os, json
+from botocore.exceptions import ClientError
 from pathlib import Path
 from django.core.exceptions import ImproperlyConfigured
 
@@ -21,24 +23,36 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-secret_file = os.path.join(BASE_DIR, 'secrets.json')
 
-with open(secret_file) as f:
-    secrets = json.loads(f.read())
+def get_secret():
 
-def get_secret(setting, secrets=secrets):
+    secret_name = "mysecret"
+    region_name = "ap-northeast-2"
+
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=region_name
+    )
     try:
-        return secrets[setting]
-    except KeyError:
-        error_msg = "Set the {} environment variable".format(setting)
-        raise ImproperlyConfigured(error_msg)
+        get_secret_value_response = client.get_secret_value(
+            SecretId = secret_name
+        )
+    except Exception as e:
+        raise e
+    else:
+        if 'SecretString' in get_secret_value_response:
+            secret = get_secret_value_response['SecretString']
+            os.environ.update(eval(secret))
 
-SECRET_KEY = get_secret("SECRET_KEY")
+get_secret()
+
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = get_secret("ALLOWED_HOSTS")
+ALLOWED_HOSTS = ["1iqxc2u93c.execute-api.ap-northeast-2.amazonaws.com","127.0.0.1"]
 
 
 # Application definition
@@ -88,7 +102,19 @@ WSGI_APPLICATION = 'django_api.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
-DATABASES = get_secret("DATABASES")
+DATABASES = {
+        "default": {
+            "ENGINE": "mysql.connector.django",
+            "NAME": "projectdb",
+            "USER": os.getenv('DB_USER'),
+            "PASSWORD": os.getenv('DB_PASSWORD'),
+            "HOST": os.getenv('DB_HOST'),
+            "PORT": os.getenv('DB_PORT'),
+            "OPTION" : {
+                "init_command": "SET sql_mode='STRICT_TRANS_TABLES'"
+            }
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators

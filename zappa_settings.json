@@ -1,0 +1,9 @@
+{
+    "dev": {
+        "aws_region": "ap-northeast-2",
+        "django_settings": "django_api.settings",
+        "project_name": "django-api",
+        "runtime": "python3.7",
+        "s3_bucket": "zappa-v572ttvq6"
+    }
+}
