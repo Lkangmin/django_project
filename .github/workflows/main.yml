@@ -49,6 +49,5 @@ jobs:
           source zappa-deploy-env/bin/activate
           pip install zappa
           python manage.py makemigrations
-          zappa init
-          zappa deploy dev
+          zappa update dev
           zappa manage dev migrate
